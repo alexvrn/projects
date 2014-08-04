@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>UI/addfilespanel.ui</file>
+        <file>UI/mainwindow.ui</file>
+        <file>UI/passworddialog.ui</file>
+        <file>UI/uploadprogress.ui</file>
+        <file>qss/main.qss</file>
+    </qresource>
+</RCC>

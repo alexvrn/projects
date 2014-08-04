@@ -1,0 +1,174 @@
+package uploadercontrol;
+
+enum FileType {
+    VideoTrack = 1;
+    RoadNotes = 2;
+    Filter = 3;
+    Other = 4;
+}
+
+enum CommandType {
+    StartUploading = 1;
+    Cancel = 2;
+    Pause = 3;
+    ChangeOption = 4;
+    Retry = 5;
+    FolderStructureErrorIgnore = 6;
+    FolderStructureErrorRetry = 7;
+    FolderStructureErrorCancel = 8;
+}
+
+enum TaskStatus {
+    Pending = 1;
+    Processing = 2;
+    Copying = 3;
+    Uploading = 4;
+    Paused = 5;
+    Retrying = 6;
+    Error = 7;
+    Ok = 8;
+    Canceled = 9;
+}
+
+enum InfoType {
+    Progress = 1;
+    Archive = 2;
+}
+
+enum RequestType {
+    GiveMeArchive = 1;
+    SendEmail = 2;
+    MoveToArchive = 3;
+    FileList = 4;
+}
+
+enum ErrorType {
+    FolderStructureInvalid = 1;
+}
+
+message ClientRequest {
+
+    enum MessageType {
+        AUTHORIZATION = 1;
+        ADDTASK = 2;
+        COMMAND = 3;
+        MAINTAINCE = 4;
+        OPEN_ITEM = 5;
+    }
+
+    message Authorization {
+        required string login = 1;
+        required string passwordHash = 2; //(SHA1)
+        required string host = 3;
+        required uint32 port = 4;
+        optional bool terminateUser = 5;
+    }
+
+    message AddTask {
+        message File {
+            required string pathName = 2;
+            required FileType filetype = 3;
+            required bool isBackup = 4;
+        }
+        required string taskName = 1;
+        repeated File files = 2;
+        required bool doCopy = 3;
+        required bool removeSourceFiles = 4;
+        required bool index = 5;
+    }
+
+    message Command{
+        optional string checkSum = 1;   // если поле существует то команда для конкретного файла
+        optional bool isBackup = 2;     // поле служит для изменения флага Backup уже добавленной задачи
+        required CommandType commandType = 3;
+    }
+
+    message Maintaince {
+        required RequestType requestType = 1;
+        optional string login = 2;
+        optional bool removeSourceFiles = 3;
+    }
+
+    message OpenItem { //Disk | folder
+        required string item = 1;
+        required bool listRecursively = 2;
+    }
+
+    required MessageType messageType = 1;
+    optional Authorization authorization = 2;
+    optional AddTask addTask = 3;
+    optional Command command = 4;
+    optional Maintaince maintaince = 5;
+    optional OpenItem openItem = 6;
+}
+
+message ServiceResponse {
+
+    enum MessageType {
+        AUTHORIZATION_STATUS = 1;
+        FILE_STATUS = 2;
+        COPYING_STATUS = 3;
+        MAINTENANCE_STATUS = 4;
+        ERRORMESSAGE = 5;
+        FILELIST = 6;
+    }
+
+    message Authorization {
+        required bool isOk = 1 [default = false];
+        required bool isAdmin = 2;
+        required bool alreadyAuthorized = 3;
+    }
+
+    message FileStatus {
+        message FileInfo {
+            required string task = 1;
+            required string pathName = 2;
+            required TaskStatus status = 3;
+            optional string fileId = 4;
+            required uint64 size = 5;
+            required bool isBackup = 6;
+            required bytes checkSum = 7;
+            required uint32 retriesCount = 8;
+            optional uint64 bytesProcessed = 9;
+            optional string additionalMessage = 10;
+            optional uint64 uploadDate = 11;
+        }
+        required InfoType responseType = 1;
+        optional string login = 2;
+        repeated FileInfo infos = 3;
+    }
+
+    message CopyingStatus
+    {
+        required uint32 filesTotal = 1;
+        required uint32 filesCopied = 2;
+        optional string login = 3;
+    }
+
+    message MaintenanceStatus
+    {
+        required bool isPaused = 1;
+    }
+
+    message Error{
+        required ErrorType error = 1;
+        required string message = 2;
+    }
+
+    message FileList {
+        message Item {
+            required bool isFolder = 1;
+            required string name = 2;
+        }
+        repeated Item list = 1;
+        required bool folderContentRecursively = 2;
+    }
+
+    required MessageType messageType = 1;
+    optional Authorization authorization = 2;
+    optional FileStatus fileStatus = 3;
+    optional CopyingStatus copyingStatus = 4;
+    optional MaintenanceStatus maintenanceStatus = 5;
+    optional Error error = 6;
+    optional FileList fileList = 7;
+}
